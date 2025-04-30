@@ -73,4 +73,3 @@ class BashConan(ConanFile):
     def package_info(self):
         bin_path = os.path.join(self.package_folder, "bin")
         self.env_info.PATH.append(bin_path)
-git push -u origin main
