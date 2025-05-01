@@ -27,7 +27,7 @@ class BashConan(ConanFile):
     def source(self):
         get(
             self,
-            url=f"https://ftp.gnu.org/gnu/bash/bash-{self.version}.tar.gz",
+            **self.conan_data["sources"][self.version],
             strip_root=True,
         )
 
@@ -36,6 +36,11 @@ class BashConan(ConanFile):
             self.options.rm_safe("fPIC")
         self.settings.rm_safe("compiler.libcxx")
         self.settings.rm_safe("compiler.cppstd")
+
+    def _dep_lib_paths(self, dep_name):
+        dep = self.dependencies[dep_name]
+        dep_cpp_info = dep.cpp_info.aggregated_components()
+        return [os.path.join(dep.package_folder, dir).replace("\\", "/") for dir in dep_cpp_info.libdirs]
 
     def generate(self):
         env = VirtualBuildEnv(self)
@@ -46,11 +51,10 @@ class BashConan(ConanFile):
 
         tc = AutotoolsToolchain(self)
         tc.configure_args.extend(
-            [f"--prefix={self.package_folder}", "--disable-nls", "--enable-rpath"]
+            [f"--disable-nls", "--enable-rpath"]
         )
-        cpp_info = self.dependencies["ncurses"].cpp_info
         tc.extra_ldflags.append(
-            f"-Wl,-rpath,{cpp_info.components['libncurses'].libdirs}"
+            f"-Wl,-rpath,{":".join(self._dep_lib_paths("ncurses"))}"
         )
 
         env = tc.environment()
